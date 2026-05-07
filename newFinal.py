@@ -43,7 +43,7 @@ class ImageProcessorApp:
         tf = tk.Frame(self.root, bg="#16213e", pady=8)
         tf.pack(fill="x")
         tk.Label(tf, text="🖼  Image Processing Studio",
-                 font=("Courier New", 18, "bold"), fg="#e94560", bg="#16213e").pack()
+                font=("Courier New", 18, "bold"), fg="#e94560", bg="#16213e").pack()
 
         main = tk.Frame(self.root, bg="#1a1a2e")
         main.pack(fill="both", expand=True, padx=10, pady=6)
@@ -53,8 +53,8 @@ class ImageProcessorApp:
         # Status bar
         self.status_var = tk.StringVar(value="Load an image to begin.")
         tk.Label(self.root, textvariable=self.status_var,
-                 font=("Courier New", 10), fg="#a0a0b0", bg="#0f3460",
-                 anchor="w", padx=12, pady=4).pack(fill="x", side="bottom")
+                font=("Courier New", 10), fg="#a0a0b0", bg="#0f3460",
+                anchor="w", padx=12, pady=4).pack(fill="x", side="bottom")
 
     def _build_left_panel(self, parent):
         container = tk.Frame(parent, bg="#16213e", width=230)
@@ -74,8 +74,8 @@ class ImageProcessorApp:
         cs.bind_all("<MouseWheel>", lambda e: cs.yview_scroll(int(-1*(e.delta/120)), "units"))
 
         BTN = dict(font=("Courier New", 10, "bold"), bg="#0f3460", fg="#e0e0e0",
-                   activebackground="#e94560", activeforeground="white",
-                   relief="flat", bd=0, padx=8, pady=6, cursor="hand2")
+                activebackground="#e94560", activeforeground="white",
+                relief="flat", bd=0, padx=8, pady=6, cursor="hand2")
         HDR = dict(font=("Courier New", 9, "bold"), fg="#e94560", bg="#16213e", anchor="w")
 
         def section(text):
@@ -94,7 +94,7 @@ class ImageProcessorApp:
             s = ttk.Scale(row, from_=from_, to=to, variable=var, orient="horizontal")
             s.pack(side="left", fill="x", expand=True)
             lbl = tk.Label(row, text=str(default), font=("Courier New", 9),
-                           fg="#a0c4ff", bg="#16213e", width=label_w)
+                        fg="#a0c4ff", bg="#16213e", width=label_w)
             lbl.pack(side="left")
             s.config(command=lambda v: update_fn(lbl))
             return s
@@ -123,54 +123,54 @@ class ImageProcessorApp:
         # ZOOM
         section("🔍  ZOOM  (2×)")
         tk.Label(panel, text="Nearest: blocky  |  Bilinear: smooth",
-                 font=("Courier New", 8), fg="#7090b0", bg="#16213e").pack(anchor="w", pady=(2,4))
+                font=("Courier New", 8), fg="#7090b0", bg="#16213e").pack(anchor="w", pady=(2,4))
         btn("Nearest Neighbor", lambda: self.zoom("nearest"))
         btn("Bilinear",         lambda: self.zoom("bilinear"))
 
         # ENHANCE
         section("✨  ENHANCE")
         tk.Label(panel, text="Redistributes pixel intensities\nfor better contrast.",
-                 font=("Courier New", 8), fg="#7090b0", bg="#16213e").pack(anchor="w", pady=(2,2))
+                font=("Courier New", 8), fg="#7090b0", bg="#16213e").pack(anchor="w", pady=(2,2))
         btn("Histogram Equalize", self.hist_equalize)
 
         tk.Label(panel, text="Gamma  (γ > 1 = brighter, γ < 1 = darker)",
-                 font=("Courier New", 8), fg="#7090b0", bg="#16213e",
-                 wraplength=190, justify="left").pack(anchor="w", pady=(6,0))
+                font=("Courier New", 8), fg="#7090b0", bg="#16213e",
+                wraplength=190, justify="left").pack(anchor="w", pady=(6,0))
         self.gamma_var = tk.DoubleVar(value=1.0)
         slider(self.gamma_var, 0.1, 3.0, "1.00", 4,
-               lambda lbl: lbl.config(text=f"{self.gamma_var.get():.2f}"))
+            lambda lbl: lbl.config(text=f"{self.gamma_var.get():.2f}"))
         btn("Apply Gamma", self.apply_gamma)
 
         # FILTERS
         section("🌀  FILTERS")
         tk.Label(panel, text="Blur kernel size (odd, 3–21):",
-                 font=("Courier New", 9), fg="#a0b0c0", bg="#16213e").pack(anchor="w", pady=(4,0))
+                font=("Courier New", 9), fg="#a0b0c0", bg="#16213e").pack(anchor="w", pady=(4,0))
         self.blur_var = tk.IntVar(value=5)
         slider(self.blur_var, 3, 21, "5", 3,
-               lambda lbl: lbl.config(text=str(int(self.blur_var.get()) | 1)))
+            lambda lbl: lbl.config(text=str(int(self.blur_var.get()) | 1)))
         btn("Gaussian Blur", self.gaussian_blur)
 
         # EDGE DETECTION
         section("🔲  EDGE DETECTION")
         tk.Label(panel, text="Low threshold:",
-                 font=("Courier New", 9), fg="#a0b0c0", bg="#16213e").pack(anchor="w")
+                font=("Courier New", 9), fg="#a0b0c0", bg="#16213e").pack(anchor="w")
         self.canny_low_var = tk.IntVar(value=100)
         self.canny_low_lbl = tk.Label(panel)  # placeholder replaced by slider()
         low_row = tk.Frame(panel, bg="#16213e"); low_row.pack(fill="x")
         low_s = ttk.Scale(low_row, from_=0, to=255, variable=self.canny_low_var, orient="horizontal")
         low_s.pack(side="left", fill="x", expand=True)
         self.canny_low_lbl = tk.Label(low_row, text="100", font=("Courier New", 9),
-                                      fg="#a0c4ff", bg="#16213e", width=4)
+                                    fg="#a0c4ff", bg="#16213e", width=4)
         self.canny_low_lbl.pack(side="left")
 
         tk.Label(panel, text="High threshold:",
-                 font=("Courier New", 9), fg="#a0b0c0", bg="#16213e").pack(anchor="w", pady=(4,0))
+                font=("Courier New", 9), fg="#a0b0c0", bg="#16213e").pack(anchor="w", pady=(4,0))
         self.canny_high_var = tk.IntVar(value=200)
         high_row = tk.Frame(panel, bg="#16213e"); high_row.pack(fill="x")
         high_s = ttk.Scale(high_row, from_=0, to=255, variable=self.canny_high_var, orient="horizontal")
         high_s.pack(side="left", fill="x", expand=True)
         self.canny_high_lbl = tk.Label(high_row, text="200", font=("Courier New", 9),
-                                       fg="#a0c4ff", bg="#16213e", width=4)
+                                    fg="#a0c4ff", bg="#16213e", width=4)
         self.canny_high_lbl.pack(side="left")
 
         def upd_low(v=None):
@@ -219,7 +219,7 @@ class ImageProcessorApp:
     def _placeholder(self, canvas, text):
         canvas.delete("all")
         canvas.create_text(260, 210, text=text, fill="#3a3a5c",
-                           font=("Courier New", 13, "bold"))
+                        font=("Courier New", 13, "bold"))
 
     def _require_image(self):
         if self.current_img is None:
@@ -368,7 +368,7 @@ class ImageProcessorApp:
         high = int(self.canny_high_var.get())
         if low >= high: high = min(low+10, 255)
         gray = self.current_img if len(self.current_img.shape) == 2 \
-               else cv2.cvtColor(self.current_img, cv2.COLOR_BGR2GRAY)
+            else cv2.cvtColor(self.current_img, cv2.COLOR_BGR2GRAY)
         self._display_result(cv2.Canny(gray, low, high))
         self._status(f"Canny Edge Detection — low: {low}, high: {high}.")
 
@@ -377,33 +377,41 @@ class ImageProcessorApp:
         if not self._require_image(): return
         img = self.current_img
 
-        # Build matplotlib figure
         fig, ax = plt.subplots(figsize=(5, 3.5), tight_layout=True)
         ax.set_facecolor("#1e1e2e")
         fig.patch.set_facecolor("#1e1e2e")
 
         if len(img.shape) == 2:
-            # Pure grayscale (2D array)
+            # Pure grayscale
             ax.plot(cv2.calcHist([img],[0],None,[256],[0,256]).flatten(),
                     color="#aaaaaa", lw=1.2, label="Gray")
-            ch_labels = ["Gray"]
         else:
             b, g, r = cv2.split(img)
-            # Only plot channels that actually have data (fixes Red/Gray showing same)
-            for ch, color, label in [(r,"#ef9a9a","Red"),
-                                      (g,"#81c784","Green"),
-                                      (b,"#4fc3f7","Blue")]:
-                if ch.max() > 0:
+            # Check which channels are NOT all zeros
+            channel_map = [
+                (r, "#ef9a9a", "Red"),
+                (g, "#81c784", "Green"),
+                (b, "#4fc3f7", "Blue"),
+            ]
+            active = [(ch, col, lbl) for ch, col, lbl in channel_map
+                    if np.any(ch > 0)]  # ← only plot channels with actual data
+
+            if len(active) == 1:
+                # Only one channel has data → show as gray (single channel view)
+                ch, col, lbl = active[0]
+                ax.plot(cv2.calcHist([ch],[0],None,[256],[0,256]).flatten(),
+                        color=col, lw=1.2, label=lbl)
+            else:
+                # Normal color image → show all 3
+                for ch, col, lbl in active:
                     ax.plot(cv2.calcHist([ch],[0],None,[256],[0,256]).flatten(),
-                            color=color, lw=1.2, label=label)
-            ch_labels = ["Blue","Green","Red"]
+                            color=col, lw=1.2, label=lbl)
 
         ax.set_xlim([0, 255])
         ax.set_title("Colour Histogram", color="white")
         ax.tick_params(colors="white")
         ax.legend(facecolor="#1e1e2e", labelcolor="white")
 
-        # Convert matplotlib figure → OpenCV image → display
         canvas = FigureCanvasAgg(fig)
         canvas.draw()
         arr = np.asarray(canvas.buffer_rgba(), dtype=np.uint8)
