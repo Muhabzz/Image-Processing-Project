@@ -394,16 +394,16 @@ class ImageProcessorApp:
         self.canvas_orig.delete("all")
         self.canvas_orig.create_image(260, 210, anchor="center", image=tk_img)
 
-    def _display_result(self, img):
+    def _display_result(self, img, update_current=True):
         """Render any OpenCV image on the right canvas and update current."""
-        self.current_img = img
+        if update_current:
+            self.current_img = img
         tk_img = cv2_to_tk(img)
         self.tk_img_right = tk_img
         self.canvas_result.delete("all")
         self.canvas_result.create_image(260, 210, anchor="center", image=tk_img)
-
-    def _set_status(self, msg):
-        self.status_var.set(f"  {msg}")
+        def _set_status(self, msg):
+            self.status_var.set(f"  {msg}")
 
     # =========================================================================
     #  FEATURE 1 – OPEN IMAGE
@@ -544,31 +544,47 @@ class ImageProcessorApp:
     #  FEATURE 4 – GEOMETRIC: ZOOM (Nearest Neighbour vs Bilinear)   [FIXED]
     # =========================================================================
     def zoom(self, method):
-        """
-        cv2.resize scales the image.
-        • INTER_NEAREST – picks the closest pixel  → blocky / pixelated look
-        • INTER_LINEAR  – bilinear interpolation   → smoother result
-
-        FIX: we always zoom from the CURRENT image (which may already be
-        grayscale, rotated, etc.) and correctly handle both 2-D (grayscale)
-        and 3-D (colour) arrays so no crash occurs.
+    """
+        Demonstrates Nearest Neighbor vs Bilinear interpolation visually.
+        Approach:
+        1. Take a center crop (half the width & height) from current_img
+        2. Enlarge that crop back to the original dimensions using the
+            chosen interpolation method.
+        Why this works:
+        - The canvas size is fixed, so a naively 2× enlarged image would
+            just get shrunk back by thumbnail() in cv2_to_tk — making both
+            methods look identical.
+        - By enlarging a CROP to the original size, the zoomed pixels fill
+            the canvas exactly with no shrinking needed.
+        - Nearest Neighbor → hard blocky pixel edges (pixelated look)
+        - Bilinear         → smooth blended transitions between pixels
+        Works correctly for both colour (3-D) and grayscale (2-D) arrays.
         """
         if not self._require_image():
             return
 
         interp = cv2.INTER_NEAREST if method == "nearest" else cv2.INTER_LINEAR
 
-        h, w = self.current_img.shape[:2]   # works for both 2-D and 3-D arrays
-        new_w, new_h = w * 2, h * 2
+        src = self.current_img
+        h, w = src.shape[:2]
 
-        zoomed = cv2.resize(self.current_img, (new_w, new_h),
-                            interpolation=interp)
+        # --- Step 1: crop the center quarter of the image ---
+        crop_h, crop_w = h // 2, w // 2
+        y1 = (h - crop_h) // 2
+        x1 = (w - crop_w) // 2
+        crop = src[y1:y1 + crop_h, x1:x1 + crop_w]
+
+        # --- Step 2: enlarge the crop back to the original dimensions ---
+        # This fills the canvas with actual zoomed pixels so the difference
+        # between the two interpolation methods is clearly visible
+        zoomed = cv2.resize(crop, (w, h), interpolation=interp)
+
         self._display_result(zoomed)
 
         name = "Nearest Neighbor" if method == "nearest" else "Bilinear"
         self._set_status(
-            f"Zoomed 2× using {name} interpolation.  "
-            f"New size: {new_w}×{new_h}  (displayed scaled to fit)"
+            f"Zoom 2× ({name}) — center crop enlarged to {w}×{h}.  "
+            f"Nearest = blocky pixels  |  Bilinear = smooth edges."
         )
 
     # =========================================================================
@@ -711,7 +727,8 @@ class ImageProcessorApp:
         """
         Draws a colour histogram for the current image on the right canvas.
         For each channel (B, G, R) we compute frequencies across 256 bins
-        and draw filled polygons, blended for overlap visibility.
+        and draw filled polygons using REAL pixel counts (not normalized)
+        so the histogram shape accurately reflects the pixel distribution.
         """
         if not self._require_image():
             return
@@ -721,24 +738,29 @@ class ImageProcessorApp:
         hist_img = np.zeros((hist_h, hist_w, 3), dtype=np.uint8)
 
         if len(img.shape) == 2:
-            channels_indices = [0]
             channel_data_list = [img]
             colours = [(200, 200, 200)]
             ch_labels = ["Gray"]
         else:
-            channels_indices = [0, 1, 2]
             channel_data_list = [img[:, :, i] for i in range(3)]
-            colours = [(255, 60, 60), (60, 255, 60), (60, 60, 255)]   # B, G, R
+            colours = [(255, 60, 60), (60, 255, 60), (60, 60, 255)]
             ch_labels = ["Blue", "Green", "Red"]
+
+        # Find global max across ALL channels so they share the same Y scale
+        global_max = 1
+        for ch_data in channel_data_list:
+            hist = cv2.calcHist([ch_data], [0], None, [256], [0, 256])
+            if hist.max() > global_max:
+                global_max = hist.max()
 
         for ch_data, colour in zip(channel_data_list, colours):
             hist = cv2.calcHist([ch_data], [0], None, [256], [0, 256])
-            cv2.normalize(hist, hist, 0, hist_h - 40, cv2.NORM_MINMAX)
 
             pts = []
             for x, val in enumerate(hist):
                 px = int(x * hist_w / 256)
-                py = hist_h - int(val[0]) - 1
+                # Scale using REAL pixel count against global max
+                py = hist_h - int((val[0] / global_max) * (hist_h - 40)) - 1
                 pts.append([px, py])
 
             pts = [[0, hist_h - 1]] + pts + [[hist_w - 1, hist_h - 1]]
@@ -755,6 +777,10 @@ class ImageProcessorApp:
             cv2.putText(blended, str(x), (px, hist_h - 5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.35, (180, 180, 180), 1)
 
+        # Y-axis: show real pixel count at top
+        cv2.putText(blended, f"Max count: {int(global_max)}", (hist_w - 140, 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (180, 180, 180), 1)
+
         cv2.putText(blended, "Colour Histogram", (10, 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (220, 220, 220), 1)
 
@@ -765,7 +791,8 @@ class ImageProcessorApp:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, colour, 1)
             legend_y += 18
 
-        self._display_result(blended)
+        # Don't overwrite current_img with the histogram drawing
+        self._display_result(blended, update_current=False)
         self._set_status("Colour Histogram displayed — channels: " + ", ".join(ch_labels))
 
 
